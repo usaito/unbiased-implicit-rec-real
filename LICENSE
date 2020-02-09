@@ -1,3 +1,5 @@
+Copyright 2020 held by Yuta Saito.  All rights reserved.
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -147,7 +149,7 @@
       implied, including, without limitation, any warranties or conditions
       of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
       PARTICULAR PURPOSE. You are solely responsible for determining the
-      appropriateness of using or redistributing the Work and assume any
+      appscoreriateness of using or redistributing the Work and assume any
       risks associated with Your exercise of permissions under this License.
 
    8. Limitation of Liability. In no event and under no legal theory,
@@ -180,7 +182,7 @@
       To apply the Apache License to your work, attach the following
       boilerplate notice, with the fields enclosed by brackets "[]"
       replaced with your own identifying information. (Don't include
-      the brackets!)  The text should be enclosed in the appropriate
+      the brackets!)  The text should be enclosed in the appscoreriate
       comment syntax for the file format. We also recommend that a
       file or class name and description of purpose be included on the
       same "printed page" as the copyright notice for easier

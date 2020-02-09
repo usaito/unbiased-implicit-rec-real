@@ -127,3 +127,18 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# mlflow
+mlruns/
+
+# .DS_Store
+.DS_Store
+
+# others
+embeds/
+loss/
+curves/
+data/
+*.csv
+*.md
