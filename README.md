@@ -30,7 +30,7 @@ If you find this code useful in your research then please cite:
 
 ### Running the code
 
-To run the simulation with real-world data, download the Yahoo! R3 dataset from (https://webscope.sandbox.yahoo.com/catalog.php?datatype=r) and put train.txt and test.txt files into data/ directory. Then, navigate to the `src/` directory and run the command
+To run the simulation with real-world data, download the Yahoo! R3 dataset from (https://webscope.sandbox.yahoo.com/catalog.php?datatype=r) and put train.txt and test.txt files into `data/` directory. Then, navigate to the `src/` directory and run the command
 
 ```bash
 for model in wmf expomf crmf
