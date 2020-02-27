@@ -203,7 +203,8 @@ class ExpoMF(BaseEstimator, TransformerMixin):
 
     def _validate(self, X, vad_data, **kwargs):
         '''Compute validation metric (NDCG@k)'''
-        vad_ndcg = normalized_dcg_at_k(X, vad_data, self.theta, self.beta, **kwargs)
+        vad_ndcg = normalized_dcg_at_k(
+            X, vad_data, self.theta, self.beta, **kwargs)
         if self.verbose:
             print('\tValidation NDCG@k: %.4f' % vad_ndcg)
             sys.stdout.flush()

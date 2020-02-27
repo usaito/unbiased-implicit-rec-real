@@ -74,13 +74,7 @@ class PointwiseRecommender(AbstractRecommender):
                 'item_embeddings', shape=[self.num_items, self.dim],
                 initializer=tf.contrib.layers.xavier_initializer())
 
-            # lookup embeddings and biases
-            self.u_embed = tf.nn.embedding_lookup(
-                self.user_embeddings, self.users)
-            self.i_embed = tf.nn.embedding_lookup(
-                self.item_embeddings, self.items)
-
-        # lookup embeddings of current batch
+            # lookup embeddings of current batch
             self.u_embed = tf.nn.embedding_lookup(
                 self.user_embeddings, self.users)
             self.i_embed = tf.nn.embedding_lookup(

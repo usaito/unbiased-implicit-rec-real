@@ -14,9 +14,9 @@ from scipy import sparse
 from sklearn.model_selection import train_test_split
 from tensorflow.python.framework import ops
 
-from evaluator import AverageOverAllEvaluator, evaluate
-from expomf.expomf import ExpoMF
-from model import PointwiseRecommender
+from evaluate.evaluator import aoa_evaluator
+from models.expomf import ExpoMF
+from models.recommenders import PointwiseRecommender
 
 
 def tocsr(data: np.array, num_user: int, num_item: int) -> sparse.csr_matrix:
@@ -27,38 +27,27 @@ def tocsr(data: np.array, num_user: int, num_item: int) -> sparse.csr_matrix:
     return sparse.csr_matrix(matrix)
 
 
-def expomf_trainer(
-        train: np.ndarray, num_user: int, num_item: int,
-        n_components: int = 30, lam: float = 1e-7,
-        model_name: str = 'expomf') -> None:
+def expomf_trainer(train: np.ndarray, num_user: int, num_item: int,
+                   n_components: int = 30, lam: float = 1e-7,
+                   model_name: str = 'expomf') -> Tuple[np.ndarray, np.ndarray]:
     """Train expomf models."""
-    path = Path(f'../logs/{model_name}/embeds/')
-    path.mkdir(parents=True, exist_ok=True)
-
-    model = ExpoMF(
-        n_components=n_components, random_state=12345, save_params=False, early_stopping=True,
-        verbose=False, lam_theta=lam, lam_beta=lam)
+    model = ExpoMF(n_components=n_components, random_state=12345,
+                   save_params=False, early_stopping=True,
+                   verbose=False, lam_theta=lam, lam_beta=lam)
     model.fit(tocsr(train, num_user, num_item))
-    np.save(file=str(path / 'user_embed.npy'), arr=model.theta)
-    np.save(file=str(path / 'item_embed.npy'), arr=model.beta)
+
+    return model.theta, model.beta
 
 
-def pointwise_trainer(
-        sess: tf.Session, model: PointwiseRecommender,
-        train: np.ndarray, test: np.ndarray, pscore: np.ndarray,
-        max_iters: int = 1000, batch_size: int = 2**12, model_name: str = 'rmf') -> None:
+def pointwise_trainer(sess: tf.Session, model: PointwiseRecommender,
+                      train: np.ndarray, test: np.ndarray, pscore: np.ndarray,
+                      max_iters: int = 1000, batch_size: int = 2**12,
+                      model_name: str = 'rmf') -> Tuple[np.ndarray, np.ndarray]:
     """Train and Evaluate Implicit Recommender."""
     train_loss_list = []
     test_dcg_list = []
     test_map_list = []
     test_recall_list = []
-
-    embed_path = Path(f'../logs/{model_name}/embeds/')
-    embed_path.mkdir(parents=True, exist_ok=True)
-    loss_path = Path(f'../logs/{model_name}/loss/')
-    loss_path.mkdir(parents=True, exist_ok=True)
-    ret_path = Path(f'../logs/{model_name}/results/')
-    ret_path.mkdir(parents=True, exist_ok=True)
 
     # initialise all the TF variables
     init_op = tf.global_variables_initializer()
@@ -66,8 +55,6 @@ def pointwise_trainer(
 
     # specify model type
     ips = 'rmf' in model_name
-    # all positive data
-    pos_data = np.r_[train[train[:, 2] == 1], test[test[:, 2] == 1]]
     # pscore for train
     pscore = pscore[train[:, 1].astype(np.int)]
     # positive and unlabeled data for training set
@@ -105,32 +92,33 @@ def pointwise_trainer(
         if i % 25 == 0:
             u_emb, i_emb = sess.run(
                 [model.user_embeddings, model.item_embeddings])
-            np.save(file=str(embed_path / 'user_embed.npy'), arr=u_emb)
-            np.save(file=str(embed_path / 'item_embed.npy'), arr=i_emb)
-            evaluator = AverageOverAllEvaluator(
-                test=test, pos_data=pos_data, model_name=model_name, save=True)
-            evaluator.evaluate(k=[5], rare='all')
-            ret = pd.read_csv(str(ret_path / 'aoa_all.csv'), index_col=0)
+            ret = aoa_evaluator(user_embed=u_emb, item_embed=i_emb,
+                                model_name=model_name, test=test, at_k=[5])
             test_dcg_list.append(ret.loc['DCG@5', model_name])
             test_map_list.append(ret.loc['MAP@5', model_name])
             test_recall_list.append(ret.loc['Recall@5', model_name])
 
-    # save embeddings.
-    u_emb, i_emb = sess.run([model.user_embeddings, model.item_embeddings])
-    np.save(file=str(embed_path / 'user_embed.npy'), arr=u_emb)
-    np.save(file=str(embed_path / 'item_embed.npy'), arr=i_emb)
     # save train and val loss curves.
+    loss_path = Path(f'../logs/{model_name}/loss/')
+    loss_path.mkdir(parents=True, exist_ok=True)
     np.save(file=str(loss_path / 'train.npy'), arr=train_loss_list)
     np.save(file=str(loss_path / 'dcg.npy'), arr=test_dcg_list)
     np.save(file=str(loss_path / 'recall.npy'), arr=test_recall_list)
     np.save(file=str(loss_path / 'map.npy'), arr=test_map_list)
 
-    # close the session.
+    u_emb, i_emb = sess.run([model.user_embeddings, model.item_embeddings])
+
     sess.close()
+
+    return u_emb, i_emb
 
 
 class Trainer:
     """Trainer Class for ImplicitRecommender."""
+
+    suffixes = ['all', 'rare']
+    at_k = [1, 3, 5]
+    rare_item_threshold = 500
 
     def __init__(self, max_iters: int = 1000, lam=1e-4, batch_size: int = 12,
                  eta: float = 0.1, model_name: str = 'wmf') -> None:
@@ -149,9 +137,9 @@ class Trainer:
     def run(self) -> None:
         """Train implicit recommenders."""
         train = np.load(f'../data/point/train.npy')
-        val = np.load(f'../data/point/val.npy')
         test = np.load(f'../data/point/test.npy')
         pscore = np.load(f'../data/point/pscore.npy')
+        item_freq = np.load(f'../data/point/item_freq.npy')
         num_users = np.int(train[:, 0].max() + 1)
         num_items = np.int(train[:, 1].max() + 1)
 
@@ -159,17 +147,26 @@ class Trainer:
         ops.reset_default_graph()
         sess = tf.Session()
         if self.model_name in ['rmf', 'wmf', 'crmf']:
-            point = PointwiseRecommender(
+            model = PointwiseRecommender(
                 num_users=num_users, num_items=num_items, weight=self.weight,
                 clip=self.clip, dim=self.dim, lam=self.lam, eta=self.eta)
-            pointwise_trainer(
-                sess, model=point, train=train, test=test, pscore=pscore,
+            u_emb, i_emb = pointwise_trainer(
+                sess, model=model, train=train, test=test, pscore=pscore,
                 max_iters=self.max_iters, batch_size=2**self.batch_size,
                 model_name=self.model_name)
 
         else:
-            expomf_trainer(
+            u_emb, i_emb = expomf_trainer(
                 train=train, num_user=num_users, num_item=num_items,
                 n_components=self.dim, lam=self.lam, model_name=self.model_name)
 
-        evaluate(train=train, val=val, test=test, model_name=self.model_name)
+        # evaluate a given recommender
+        ret_path = Path(f'../logs/{self.model_name}/results/')
+        ret_path.mkdir(parents=True, exist_ok=True)
+        test_rare = test[item_freq[test[:, 1]] <= self.rare_item_threshold]
+        for test_, suffix in zip([test, test_rare], self.suffixes):
+            results = aoa_evaluator(user_embed=u_emb, item_embed=i_emb,
+                                    test=test_, model_name=self.model_name,
+                                    at_k=self.at_k)
+
+            results.to_csv(ret_path / f'aoa_{suffix}.csv')
