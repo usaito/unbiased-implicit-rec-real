@@ -136,7 +136,7 @@ mlruns/
 .DS_Store
 
 # others
-embeds/
+plots/
 loss/
 curves/
 data/

@@ -36,7 +36,7 @@ To run the simulation with real-world data, download the [Yahoo! R3 dataset](htt
 ```bash
 for model in wmf expomf crmf
 do
-  python main.py $model --generate_data &
+  python main.py $model --preprocess_data &
 done
 ```
 
@@ -46,15 +46,9 @@ This will run real-world experiments conducted in Section 6. After running the e
 python visualize.py
 ```
 
-You can check the experimental parameters actually used in our experiments in the `config.json` file.
+You can check the experimental parameters actually used in our experiments in the `config.yaml` file.
 
-Once the code is finished executing, you can view the run's metrics, parameters, and details by running the command
-
-```
-$ mlflow ui
-```
-
-and navigating to [http://localhost:5000](http://localhost:5000).
+Once the code is finished executing, you can find the results of ranking metrics of all methods in `./logs/overall/` directory. In addition, the figures are stored in `./plots/results/` directory.
 
 ### Figures
 
