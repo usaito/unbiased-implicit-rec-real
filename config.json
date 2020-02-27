@@ -1,7 +1,0 @@
-{
-  "threshold": 4,
-  "eta": 5e-3,
-  "lam": 1e-4,
-  "batch_size": 15,
-  "max_iters": 301
-}
