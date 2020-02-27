@@ -5,7 +5,7 @@ in the paper "Unbiased Recommender Learning from Missing-Not-At-Random Implicit 
 
 import argparse
 import sys
-import json
+import yaml
 import warnings
 
 import mlflow
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # hyper-parameters
-    config = json.load(open('../config.json', 'rb'))
+    config = yaml.safe_load(open('../config.yaml', 'rb'))
     eta = config['eta']
     batch_size = config['batch_size']
     max_iters = config['max_iters']

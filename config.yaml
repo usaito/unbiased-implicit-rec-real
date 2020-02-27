@@ -1,0 +1,5 @@
+threshold: 4
+eta: 0.005
+lam: 0.0001
+batch_size: 15
+max_iters: 301
