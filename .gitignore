@@ -139,6 +139,7 @@ mlruns/
 plots/
 loss/
 curves/
-data/
+*.txt
+*.npy
 *.csv
 *.md
